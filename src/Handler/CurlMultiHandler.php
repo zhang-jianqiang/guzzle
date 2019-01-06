@@ -37,8 +37,14 @@ class CurlMultiHandler
     {
         $this->factory = isset($options['handle_factory'])
             ? $options['handle_factory'] : new CurlFactory(50);
-        $this->selectTimeout = isset($options['select_timeout'])
-            ? $options['select_timeout'] : 1;
+
+        if (isset($options['select_timeout'])) {
+            $this->selectTimeout = $options['select_timeout'];
+        } elseif ($selectTimeout = getenv('GUZZLE_CURL_SELECT_TIMEOUT')) {
+            $this->selectTimeout = $selectTimeout;
+        } else {
+            $this->selectTimeout = 1;
+        }
     }
 
     public function __get($name)
@@ -65,7 +71,9 @@ class CurlMultiHandler
 
         $promise = new Promise(
             [$this, 'execute'],
-            function () use ($id) { return $this->cancel($id); }
+            function () use ($id) {
+                return $this->cancel($id);
+            }
         );
 
         $this->addRequest(['easy' => $easy, 'deferred' => $promise]);
